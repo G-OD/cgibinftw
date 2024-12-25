@@ -1,13 +1,14 @@
 package main
 
 import (
-	"bytes"
 	_ "embed"
 	"encoding/base64"
 	"fmt"
 	"html/template"
 	"log"
 	"math/rand"
+	"net/http"
+	"net/http/cgi"
 	"net/url"
 	"os"
 	"time"
@@ -35,8 +36,9 @@ var (
 )
 
 func main() {
-	if err := render(); err != nil {
-		log.Println("oops:", err)
+	http.HandleFunc("/", render)
+	if err := cgi.Serve(nil); err != nil {
+		log.Fatal(err)
 	}
 }
 
@@ -123,24 +125,24 @@ func parseOpts(queryString string) (o []option) {
 	return o
 }
 
-func render() error {
+func render(w http.ResponseWriter, r *http.Request) {
 	t := template.Must(template.New("page").Parse(htmlTemplate))
 	a := newAssets(parseOpts(os.Getenv("QUERY_STRING"))...)
 
 	c, err := counter.New()
 	if err != nil {
-		return err
+		log.Println("oops:", err)
+		return
 	}
 
 	i, err := c.Count()
 	if err != nil {
-		return err
+		log.Println("oops:", err)
+		return
 	}
 	a.Counter = i
-	var b bytes.Buffer
-	if err := t.Execute(&b, a); err != nil {
-		return err
+	if err := t.Execute(w, a); err != nil {
+		log.Println("oops:", err)
+		return
 	}
-	fmt.Println(b.String())
-	return nil
 }
