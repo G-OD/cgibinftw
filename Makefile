@@ -17,7 +17,7 @@ dev:
 docker-test: test_mode=true
 docker-run: test_mode=false
 docker-run docker-test:
-	GOARCH=amd64 GOOS=linux make build && \
+	GOARCH=amd64 GOOS=linux CGO_ENABLED=0 make build && \
 	docker-compose build && \
 	TEST_MODE=$(test_mode) docker-compose up \
 	--exit-code-from cgibinftw
